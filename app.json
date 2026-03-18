@@ -1,14 +1,14 @@
 {
   "expo": {
     "name": "Porfolio",
-    "slug": "Porfolio",
+    "slug": "porfolio",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/con.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "porfolio",
     "splash": {
-      "image": "./assets/con.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -24,7 +24,7 @@
       }
     },
     "web": {
-      "favicon": "./assets/con.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router"

@@ -39,10 +39,11 @@ export default function App() {
 
   const renderHeader = () => (
     <View style={styles.heroSection}>
+
       <Image
-        source={{ uri: 'https://github.com/Kokeeu.png' }}
+        source={{ uri: `https://github.com/${GITHUB_USERNAME}.png` }}
         style={styles.profileImg}
-      />
+      />  
       <Text style={styles.webTitle}>Anderson Solano Chavarria</Text>
       <Text style={styles.webSubtitle}>Desarrollador Web & Mobile</Text>
       
