@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -8,142 +8,220 @@ import {
   Pressable, 
   Linking, 
   FlatList, 
-  ActivityIndicator 
+  Animated as AnimatedNative, 
+  useWindowDimensions, 
 } from 'react-native';
+import AnimatedReanimated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  Easing,
+  FadeInDown,
+  FadeIn
+} from 'react-native-reanimated';
+import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; 
 
-const GITHUB_USERNAME = 'Kokeeu';
+const GITHUB_USUARIO = 'Kokeeu';
+const COLOR_MORADO = '#a855f7'; 
 
-export default function App() {
-  const [repos, setRepos] = useState([]);
-  const [loading, setLoading] = useState(true);
+const EstrellaAnimada = ({ windowWidth, windowHeight }) => {
+  const xValue = useSharedValue(Math.random() * windowWidth);
+  const yValue = useSharedValue(Math.random() * windowHeight);
+  const velocidad = Math.random() * 0.5 + 0.1;
 
   useEffect(() => {
-    fetchGitHubRepos();
+    const destinoX = windowWidth + 20;
+    xValue.value = withRepeat(
+      withTiming(destinoX, {
+        duration: (windowWidth / velocidad) * 50,
+        easing: Easing.linear,
+      }),
+      -1,
+      false,
+      () => {
+        xValue.value = -10;
+        yValue.value = Math.random() * windowHeight;
+      }
+    );
+  }, [windowWidth, windowHeight]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: xValue.value }, { translateY: yValue.value }],
+    opacity: Math.random() * 0.5 + 0.3,
+  }));
+
+  const tamaño = Math.random() * 2 + 1;
+
+  return (
+    <AnimatedReanimated.View 
+      style={[estilos.puntoEstelar, animatedStyle, { width: tamaño, height: tamaño }]} 
+    />
+  );
+};
+
+const FondoEspacialAnimado = () => {
+  const { width, height } = useWindowDimensions();
+  const estrellas = useRef([...Array(50)].map((_, i) => i)).current;
+
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      {estrellas.map((id) => (
+        <EstrellaAnimada key={id} windowWidth={width} windowHeight={height} />
+      ))}
+    </View>
+  );
+};
+
+const BotonAnimado = ({ children, onPress, style }) => {
+  const escala = useRef(new AnimatedNative.Value(1)).current;
+  const presionarIn = () => AnimatedNative.spring(escala, { toValue: 0.95, useNativeDriver: true }).start();
+  const presionarOut = () => AnimatedNative.spring(escala, { toValue: 1, useNativeDriver: true, friction: 3, tension: 40 }).start();
+
+  return (
+    <Pressable onPressIn={presionarIn} onPressOut={presionarOut} onPress={onPress}>
+      <AnimatedNative.View style={[style, { transform: [{ scale: escala }] }]}>
+        {children}
+      </AnimatedNative.View>
+    </Pressable>
+  );
+};
+
+export default function App() {
+  const [repositorios, setRepositorios] = useState([]);
+  const opacidadPulso = useRef(new AnimatedNative.Value(0.4)).current;
+
+  useEffect(() => {
+    obtenerRepositorios();
+    AnimatedNative.loop(
+      AnimatedNative.sequence([
+        AnimatedNative.timing(opacidadPulso, { toValue: 1, duration: 1800, useNativeDriver: true }),
+        AnimatedNative.timing(opacidadPulso, { toValue: 0.4, duration: 1800, useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
 
-  const fetchGitHubRepos = async () => {
+  const obtenerRepositorios = async () => {
     try {
-      const response = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=6`);
-      const data = await response.json();
-
-      if (Array.isArray(data)) {
-        setRepos(data.filter(repo => !repo.fork));
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      const respuesta = await fetch(`https://api.github.com/users/${GITHUB_USUARIO}/repos?sort=updated&per_page=6`);
+      const datos = await respuesta.json();
+      if (Array.isArray(datos)) setRepositorios(datos.filter(repo => !repo.fork));
+    } catch (error) { console.error(error); }
   };
 
-
-  const renderHeader = () => (
-    <View style={styles.heroSection}>
-
-      <Image
-        source={{ uri: `https://github.com/${GITHUB_USERNAME}.png` }}
-        style={styles.profileImg}
-      />  
-      <Text style={styles.webTitle}>Anderson Solano Chavarria</Text>
-      <Text style={styles.webSubtitle}>Desarrollador Web & Mobile</Text>
+  const renderizarCabecera = () => (
+    <View style={estilos.cabeceraContenedor}>
+      <View style={estilos.resplandorMorado} />
       
-      <View style={styles.socialRow}>
-        <Pressable onPress={() => Linking.openURL(`https://github.com/${GITHUB_USERNAME}`)}>
-          <Text style={styles.socialText}>GitHub</Text>
-        </Pressable>
-        <Pressable onPress={() => Linking.openURL('https://www.linkedin.com/in/anderson-solano-chavarria-75a5763b8')}>
-          <Text style={styles.socialText}>LinkedIn</Text>
-        </Pressable>
-        <Pressable onPress={() => Linking.openURL('mailto:andersonsolanochavarria@gmail.com')}>
-          <Text style={styles.socialText}>Correo</Text>
-        </Pressable>
-        <Pressable onPress={() => Linking.openURL('https://www.instagram.com/k0keeu?igsh=aTVvcDBpZ2tjYzNr')}>
-          <Text style={styles.socialText}>Instagram</Text>
-        </Pressable>
+      <AnimatedReanimated.View entering={FadeIn.duration(1000)}>
+        <View style={estilos.bordeFoto}>
+          <Image
+            source={{ uri: `https://github.com/${GITHUB_USUARIO}.png` }}
+            style={estilos.fotoPerfil}
+          />
+        </View>
+      </AnimatedReanimated.View>
+
+      <Text style={estilos.tituloNombre}>Anderson Solano Chavarria</Text>
+      
+      <View style={estilos.contenedorEstado}>
+        <AnimatedNative.View style={[estilos.puntoEstado, { opacity: opacidadPulso }]} />
+        <Text style={estilos.textoEstado}>junior desarrollador aprendiendo</Text>
       </View>
 
-      <View style={styles.bioContainer}>
-        <Text style={styles.bioText}>
-          Soy un desarrollador web.
-          Con habilidades en JavaScript, React Native, HTML5, CSS3, Bootstrap, Git y Python.
-          Trato de ser constante en mi aprendizaje y siempre busco nuevos desafíos para crecer profesionalmente.
+      <View style={estilos.filaSocial}>
+        <BotonAnimado style={estilos.botonSocial} onPress={() => Linking.openURL(`https://github.com/${GITHUB_USUARIO}`)}>
+          <FontAwesome5 name="github" size={18} color={COLOR_MORADO} />
+        </BotonAnimado>
+        <BotonAnimado style={estilos.botonSocial} onPress={() => Linking.openURL('https://www.linkedin.com/in/anderson-solano-chavarria-75a5763b8')}>
+          <FontAwesome5 name="linkedin" size={18} color={COLOR_MORADO} />
+        </BotonAnimado>
+        <BotonAnimado style={estilos.botonSocial} onPress={() => Linking.openURL('https://www.instagram.com/k0keeu?igsh=aTVvcDBpZ2tjYzNr')}>
+          <FontAwesome5 name="instagram" size={18} color={COLOR_MORADO} />
+        </BotonAnimado>
+      </View>
+
+      <View style={estilos.tarjetaGlass}>
+        <Text style={estilos.textoBio}>
+          Desarrollador Web. Transformando ideas con Html, Css, React y mucho JavaScript.
         </Text>
       </View>
 
-      <View style={styles.skillsWrapper}>
-        <Text style={styles.skillTitle}>Stack Tecnológico</Text>
-        <View style={styles.skillsGrid}>
-          {['JavaScript', 'React Native', 'HTML5', 'CSS3', 'Bootstrap', 'Git', 'Python'].map((skill) => (
-            <View key={skill} style={styles.skillBadge}>
-              <Text style={styles.skillBadgeText}>{skill}</Text>
+      <View style={estilos.contenedorHabilidades}>
+        <Text style={estilos.tituloHabilidades}>Habilidades</Text>
+        <View style={estilos.filaUnificada}>
+          {['React Native', 'JavaScript', 'Python', 'Git', 'Bootstrap', 'HTML5', 'CSS3'].map((tech) => (
+            <View key={tech} style={estilos.badgeTec}>
+              <Text style={estilos.textoBadge}>{tech}</Text>
             </View>
           ))}
         </View>
       </View>
-
-      <Text style={styles.sectionTitleWeb}>Proyectos hechos por mi</Text>
+      
+      <View style={estilos.contenedorTituloSeccion}>
+        <MaterialCommunityIcons name="star-four-points" size={16} color={COLOR_MORADO} />
+        <Text style={estilos.tituloSeccionProyectos}>Proyectos</Text>
+      </View>
     </View>
   );
 
   return (
-    <View style={styles.body}>
+    <View style={estilos.cuerpo}>
+      <FondoEspacialAnimado />
       <FlatList
-        data={repos}
+        data={repositorios}
         keyExtractor={item => item.id.toString()}
-        renderItem={({ item }) => (
-          <Pressable style={styles.projectCardWeb} onPress={() => Linking.openURL(item.html_url)}>
-            <Text style={styles.cardTitle}>{item.name.replace(/-/g, ' ')}</Text>
-            <Text style={styles.cardDesc} numberOfLines={2}>
-              {item.description || 'Cosas que hice durante mi aprendizaje.'}
-            </Text>
-            <Text style={styles.cardTech}>{item.language || 'Code'}</Text>
-          </Pressable>
+        renderItem={({ item, index }) => (
+          <AnimatedReanimated.View entering={FadeInDown.delay(index * 120).springify()}>
+            <BotonAnimado style={estilos.tarjetaProyecto} onPress={() => Linking.openURL(item.html_url)}>
+              <Text style={estilos.tituloTarjeta}>{item.name.replace(/-/g, ' ')}</Text>
+              <Text style={estilos.descripcionTarjeta} numberOfLines={2}>
+                {item.description || 'Proyecto en órbita.'}
+              </Text>
+              <View style={estilos.filaInfo}>
+                <View style={estilos.pillLenguaje}>
+                  <Text style={estilos.textoLenguaje}>{item.language || 'Código'}</Text>
+                </View>
+                <MaterialCommunityIcons name="rocket-launch" size={16} color={COLOR_MORADO} />
+              </View>
+            </BotonAnimado>
+          </AnimatedReanimated.View>
         )}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.container}
-        ListEmptyComponent={() => (
-          loading ? <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} /> : null
-        )}
+        ListHeaderComponent={renderizarCabecera}
+        contentContainerStyle={estilos.contenedorLista}
       />
       <StatusBar style="light" />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  body: { flex: 1, backgroundColor: '#0a0a0a' },
-  container: { paddingBottom: 50 },
-  heroSection: {
-    backgroundColor: '#161616',
-    alignItems: 'center',
-    paddingVertical: 40,
-    borderBottomWidth: 1,
-    borderColor: '#ffffff10',
-  },
-  profileImg: { width: 100, height: 100, borderRadius: 50, marginBottom: 15 },
-  webTitle: { color: '#fff', fontSize: 24, fontWeight: '800' },
-  webSubtitle: { color: '#ffffffa0', fontSize: 14, marginTop: 5 },
-  socialRow: { flexDirection: 'row', gap: 20, marginTop: 20, flexWrap: 'wrap', justifyContent: 'center' },
-  socialText: { color: '#007bff', fontWeight: '600', textDecorationLine: 'underline' },
-  bioContainer: {
-    width: '85%', marginTop: 25, backgroundColor: '#ffffff05',
-    padding: 15, borderRadius: 12, borderLeftWidth: 3, borderLeftColor: '#007bff',
-  },
-  bioText: { color: '#ffffffd0', fontSize: 14, lineHeight: 20 },
-  skillsWrapper: { width: '90%', marginTop: 25, paddingHorizontal: 10 },
-  skillTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 10 },
-  skillsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  skillBadge: { 
-    backgroundColor: '#1f1f1f', paddingHorizontal: 10, paddingVertical: 5, 
-    borderRadius: 15, borderWidth: 1, borderColor: '#ffffff15' 
-  },
-  skillBadgeText: { color: '#007bff', fontSize: 12, fontWeight: '600' },
-  sectionTitleWeb: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 30, alignSelf: 'flex-start', marginLeft: '5%' },
-  projectCardWeb: {
-    backgroundColor: '#1f1f1f', padding: 20, borderRadius: 12, width: '90%',
-    alignSelf: 'center', marginTop: 15, borderWidth: 1, borderColor: '#ffffff10'
-  },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  cardDesc: { color: '#ffffffa0', fontSize: 13, marginTop: 5 },
-  cardTech: { color: '#007bff', fontSize: 11, fontWeight: 'bold', marginTop: 10, textTransform: 'uppercase' }
+const estilos = StyleSheet.create({
+  cuerpo: { flex: 1, backgroundColor: '#020205' },
+  contenedorLista: { paddingBottom: 40 },
+  puntoEstelar: { position: 'absolute', backgroundColor: '#fff', borderRadius: 5 },
+  resplandorMorado: { position: 'absolute', top: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: COLOR_MORADO, opacity: 0.1 },
+  cabeceraContenedor: { paddingTop: 60, paddingBottom: 20, alignItems: 'center' },
+  bordeFoto: { padding: 3, borderRadius: 35, backgroundColor: '#ffffff08', borderWidth: 1, borderColor: COLOR_MORADO + '20' },
+  fotoPerfil: { width: 90, height: 90, borderRadius: 32 },
+  tituloNombre: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 15, letterSpacing: 1 },
+  contenedorEstado: { flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: COLOR_MORADO + '10', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: COLOR_MORADO + '20' },
+  puntoEstado: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLOR_MORADO, marginRight: 8 },
+  textoEstado: { color: COLOR_MORADO, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  filaSocial: { flexDirection: 'row', gap: 15, marginTop: 25 },
+  botonSocial: { width: 45, height: 45, backgroundColor: '#0a0a14', borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLOR_MORADO + '15' },
+  tarjetaGlass: { width: '85%', marginTop: 30, padding: 20, backgroundColor: '#ffffff05', borderRadius: 24, borderWidth: 1, borderColor: '#ffffff10' },
+  textoBio: { color: '#ffffffa0', fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  contenedorHabilidades: { width: '90%', marginTop: 25 },
+  tituloHabilidades: { color: '#ffffff40', fontSize: 10, fontWeight: '700', marginBottom: 12, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 2 },
+  filaUnificada: { flexDirection: 'row', justifyContent: 'center', gap: 8, flexWrap: 'wrap' },
+  badgeTec: { backgroundColor: '#0a0a14', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: COLOR_MORADO + '25' },
+  textoBadge: { color: '#ffffffb0', fontSize: 11, fontWeight: '700' },
+  contenedorTituloSeccion: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginLeft: '8%', marginTop: 45, gap: 8 },
+  tituloSeccionProyectos: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  tarjetaProyecto: { backgroundColor: '#08080f', padding: 22, borderRadius: 28, width: '90%', alignSelf: 'center', marginTop: 16, borderWidth: 1, borderColor: COLOR_MORADO + '10' },
+  tituloTarjeta: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  descripcionTarjeta: { color: '#ffffff60', fontSize: 13, marginTop: 8, lineHeight: 18 },
+  filaInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 18 },
+  pillLenguaje: { backgroundColor: COLOR_MORADO + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  textoLenguaje: { color: COLOR_MORADO, fontSize: 10, fontWeight: '800' }
 });
