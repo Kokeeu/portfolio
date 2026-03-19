@@ -99,6 +99,11 @@ export default function App() {
         AnimatedNative.timing(opacidadPulso, { toValue: 0.4, duration: 1800, useNativeDriver: true }),
       ])
     ).start();
+
+
+    if (typeof document !== 'undefined') {
+      document.body.style.backgroundColor = '#020205';
+    }
   }, []);
 
   const obtenerRepositorios = async () => {
@@ -188,7 +193,8 @@ export default function App() {
           </AnimatedReanimated.View>
         )}
         ListHeaderComponent={renderizarCabecera}
-        contentContainerStyle={estilos.contenedorLista}
+
+        contentContainerStyle={[estilos.contenedorLista, { flexGrow: 1 }]}
       />
       <StatusBar style="light" />
     </View>
@@ -196,8 +202,13 @@ export default function App() {
 }
 
 const estilos = StyleSheet.create({
-  cuerpo: { flex: 1, backgroundColor: '#020205' },
-  contenedorLista: { paddingBottom: 40 },
+  cuerpo: { 
+    flex: 1, 
+    backgroundColor: '#020205' 
+  },
+  contenedorLista: { 
+    paddingBottom: 80 
+  },
   puntoEstelar: { position: 'absolute', backgroundColor: '#fff', borderRadius: 5 },
   resplandorMorado: { position: 'absolute', top: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: COLOR_MORADO, opacity: 0.1 },
   cabeceraContenedor: { paddingTop: 60, paddingBottom: 20, alignItems: 'center' },
