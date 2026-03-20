@@ -141,8 +141,8 @@ export default function App() {
         <BotonAnimado style={estilos.botonSocial} onPress={() => Linking.openURL('https://www.linkedin.com/in/anderson-solano-chavarria-75a5763b8')}>
           <FontAwesome5 name="linkedin" size={18} color={COLOR_MORADO} />
         </BotonAnimado>
-        <BotonAnimado style={estilos.botonSocial} onPress={() => Linking.openURL('https://www.instagram.com/k0keeu?igsh=aTVvcDBpZ2tjYzNr')}>
-          <FontAwesome5 name="instagram" size={18} color={COLOR_MORADO} />
+        <BotonAnimado style={estilos.botonSocial} onPress={() => Linking.openURL('mailto:andersonsolanochavarria@gmail.com')}>
+          <FontAwesome5 name="envelope" size={18} color={COLOR_MORADO} />
         </BotonAnimado>
       </View>
 
@@ -181,7 +181,7 @@ export default function App() {
             <BotonAnimado style={estilos.tarjetaProyecto} onPress={() => Linking.openURL(item.html_url)}>
               <Text style={estilos.tituloTarjeta}>{item.name.replace(/-/g, ' ')}</Text>
               <Text style={estilos.descripcionTarjeta} numberOfLines={2}>
-                {item.description || 'Proyecto en órbita.'}
+                {item.description || 'Proyectos a los que no supe que poner de descripcion.'}
               </Text>
               <View style={estilos.filaInfo}>
                 <View style={estilos.pillLenguaje}>
